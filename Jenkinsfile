@@ -1,29 +1,31 @@
 pipeline {
     agent any
-
-    environment {
-        DOCKERHUB_USERNAME = "your_dockerhub_username"
-        DOCKERHUB_TOKEN = credentials('dockerhub-token')
-        IMAGE_NAME = "flask-devops-app"
-    }
-
+    
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Ajayrahangdale/devops-flask-app.git', credentialsId: 'dba8673b-7100-44fd-84cf-6a68e99c2560'
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:latest .'
+                sh 'docker build -t flask-devops-app:latest .'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                sh "echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'ajayrahangdale', passwordVariable: 'PASSWORD')]) {
+                    sh 'echo $PASSWORD | docker login -u $ajayrahangdale --password-stdin'
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest'
+                sh 'docker tag flask-devops-app:latest ajayrahangdale/flask-devops-app:latest'
+                sh 'docker push ajayrahangdale/flask-devops-app:latest'
             }
         }
     }
